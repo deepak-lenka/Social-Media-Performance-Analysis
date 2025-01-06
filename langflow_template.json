@@ -1,0 +1,89 @@
+{
+    "description": "Social Media Analytics Flow",
+    "name": "social_media_analytics",
+    "nodes": [
+        {
+            "id": "input_node",
+            "type": "input",
+            "data": {
+                "node_type": "input",
+                "fields": {
+                    "post_type": {
+                        "type": "string",
+                        "description": "Type of post (carousel, reel, static)",
+                        "options": ["All Types", "carousel", "reel", "static"],
+                        "default": "All Types"
+                    }
+                }
+            }
+        },
+        {
+            "id": "db_query",
+            "type": "python",
+            "data": {
+                "code": "try:\n    from db_operations import SocialMediaAnalytics\n    analytics = SocialMediaAnalytics()\n    metrics = analytics.get_engagement_metrics(post_type)\n    return {'metrics': metrics, 'post_type': post_type, 'success': True}\nexcept Exception as e:\n    return {'error': str(e), 'success': False}"
+            }
+        },
+        {
+            "id": "error_handler",
+            "type": "python",
+            "data": {
+                "code": "if not db_query.get('success', False):\n    raise Exception(f'Database query failed: {db_query.get(\"error\", \"Unknown error\")}')\nreturn db_query"
+            }
+        },
+        {
+            "id": "metrics_formatter",
+            "type": "prompt",
+            "data": {
+                "template": "Here are the social media metrics for different post types:\n\n{metrics}\n\nPost type selected: {post_type}\n\nAnalyze these metrics and provide:\n1. Engagement comparison between post types (percentage differences)\n2. Which type performs best for each metric (likes, shares, comments)\n3. Three specific, actionable recommendations for content strategy\n\nFormat the response in a clear, professional manner with bullet points and sections."
+            }
+        },
+        {
+            "id": "gpt_analysis",
+            "type": "llm",
+            "data": {
+                "model": "gpt-3.5-turbo",
+                "temperature": 0.7,
+                "system_message": "You are a social media analytics expert. Analyze the metrics and provide actionable insights and recommendations. Focus on practical, data-driven advice that can improve engagement rates."
+            }
+        },
+        {
+            "id": "output_formatter",
+            "type": "prompt",
+            "data": {
+                "template": "# Social Media Performance Analysis for {post_type} Posts\n\n## Engagement Metrics\n{metrics}\n\n## Key Insights\n{gpt_response}\n\n## Recommendations\n{recommendations}"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "source": "input_node",
+            "target": "db_query",
+            "field": "post_type"
+        },
+        {
+            "source": "db_query",
+            "target": "error_handler"
+        },
+        {
+            "source": "error_handler",
+            "target": "metrics_formatter",
+            "fields": ["metrics", "post_type"]
+        },
+        {
+            "source": "metrics_formatter",
+            "target": "gpt_analysis",
+            "field": "prompt"
+        },
+        {
+            "source": "gpt_analysis",
+            "target": "output_formatter",
+            "field": "gpt_response"
+        },
+        {
+            "source": "error_handler",
+            "target": "output_formatter",
+            "fields": ["post_type", "metrics"]
+        }
+    ]
+} 
