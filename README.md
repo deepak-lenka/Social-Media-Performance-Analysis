@@ -125,8 +125,6 @@ streamlit run app.py
 
 - DataStax for providing the Astra DB platform
 - OpenAI for the GPT API
-- Langflow community for workflow tools
-- Streamlit team for the amazing dashboard framework
 
 ## 📧 Contact
 
